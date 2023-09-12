@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     #Extensions
 
     'crispy_forms',
-    'django_extensions', 
+    'django_extensions',
+    'taggit', 
 ]
 
 MIDDLEWARE = [
@@ -148,3 +149,4 @@ LOGGING = {
     },
 }
 
+TAGGIT_CASE_INSENSITIVE = True

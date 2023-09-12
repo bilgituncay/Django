@@ -23,6 +23,7 @@ class AdListView(OwnerListView):
         if strval:
             query = Q(title__icontains=strval)
             query.add(Q(text__icontains=strval), Q.OR)
+            query.add(Q(tags__name__in=[strval]), Q.OR)
             ad_list = Ad.objects.filter(query).select_related().order_by('-updated_at')[:10]
         else:
             ad_list = Ad.objects.all().order_by('-updated_at')[:10]
@@ -65,24 +66,30 @@ class AdCreateView(LoginRequiredMixin, View):
         ad = form.save(commit=False)
         ad.owner = self.request.user
         ad.save()
+        form.save_m2m()
         return redirect(self.success_url)
+
+from django.views.generic.edit import UpdateView
 
 class AdUpdateView(OwnerUpdateView):
     template_name = 'ads/ad_form.html'
+    model = Ad
+    fields = ['title', 'price', 'tags', 'text']
     success_url = reverse_lazy('ads:all')
 
-    def get(self, request, pk):
-        ad = get_object_or_404(Ad, id=pk, owner=self.request.user)
-        form = CreateForm(request.POST, request.FILES or None, instance=ad)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ad = self.get_object()
+        form = CreateForm(instance=ad)  # Populate the form with existing data
+        context['form'] = form
+        return context
 
-        if not form.is_valid():
-            ctx = {'form': form}
-            return render(request, self.template_name, ctx)
-        
+    def form_valid(self, form):
         ad = form.save(commit=False)
         ad.save()
+        form.save_m2m()  # Save the tags
+        return super().form_valid(form)
 
-        return redirect(self.success_url)
 
 class AdDeleteView(OwnerDeleteView):
     model = Ad
