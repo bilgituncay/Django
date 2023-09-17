@@ -7,11 +7,24 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 
 from django.db.models import Q
 
-from .forms import CreateForm, CommentForm
+from .forms import CreateForm, CommentForm, UserRegistrationForm
 from .models import Ad, Comment, Fav
 from .owner import OwnerListView, OwnerDetailView, OwnerCreateView, OwnerUpdateView, OwnerDeleteView
 
 # Create your views here.
+def register(request):
+    if request.method == 'POST':
+        user_form = UserRegistrationForm(request.POST)
+        if user_form.is_valid():
+            new_user = user_form.save(commit=False)
+            new_user.set_password(user_form.cleaned_data['password'])
+            new_user.save()
+            ctx = {'new_user': new_user}
+            return render(request,'registration/register_done.html', ctx)
+    else:
+        user_form = UserRegistrationForm()
+    return render(request, 'registration/register.html', {'user_form': user_form})
+
 
 class AdListView(OwnerListView):
     model = Ad
